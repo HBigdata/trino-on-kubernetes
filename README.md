@@ -22,12 +22,12 @@ Trino（之前称为Presto SQL）是一个高性能的分布式SQL查询引擎�
 
 这里只是讲解部署过程，想了解更多的trino的内容，可参考我以下几篇文章：
 
-- [大数据Hadoop之——基于内存型SQL查询引擎Presto（Presto-Trino环境部署）](https://blog.csdn.net/qq_35745940/article/details/123778966)
-- [【大数据】Presto（Trino）SQL 语法进阶](https://blog.csdn.net/qq_35745940/article/details/130736259)
-- [【大数据】Presto（Trino）REST API 与执行计划介绍](https://blog.csdn.net/qq_35745940/article/details/130757127)
-- [【大数据】Presto（Trino）配置参数以及 SQL语法](https://blog.csdn.net/qq_35745940/article/details/130665852)
+- [大数据Hadoop之——基于内存型SQL查询引擎Presto（Presto-Trino环境部署）](https://mp.weixin.qq.com/s?__biz=MzI3MDM5NjgwNg==&mid=2247484420&idx=1&sn=6a8851681fda8896048f7c76b52ab1f7&chksm=ead0f8eddda771fbcec6cac7fb14661379568c26749c70b93c2cca8ff63d409c21c7f613573c#rd)
+- [【大数据】Presto（Trino）SQL 语法进阶](https://mp.weixin.qq.com/s?__biz=MzI3MDM5NjgwNg==&mid=2247487976&idx=1&sn=07d402c3bdf94adf71bdfca59a2667f7&chksm=ead0ed01dda76417ac92ce3ad43007164dc7c5daaa2cb5037144680a800a3c41b588b343de84#rd)
+- [【大数据】Presto（Trino）REST API 与执行计划介绍](https://mp.weixin.qq.com/s?__biz=MzI3MDM5NjgwNg==&mid=2247487989&idx=1&sn=c4a0ee247a2b9ee1c031d1738fe4ac7a&chksm=ead0ed1cdda7640ad8b24370c218d629ca9f474176e55ff1d709391abf223ab3b2e862f3d689#rd)
+- [【大数据】Presto（Trino）配置参数以及 SQL语法](https://mp.weixin.qq.com/s?__biz=MzI3MDM5NjgwNg==&mid=2247487957&idx=1&sn=f3cdbb7eaf2a9ddb398a8f60eef88024&chksm=ead0ed3cdda7642af685843e010809ba4f222e89227019873bad5ddaea89380940a392eece50#rd)
 
-如果想单机容器部署，可以参考我这篇文章：[【大数据】通过 docker-compose 快速部署 Presto（Trino）保姆级教程](https://blog.csdn.net/qq_35745940/article/details/130611686)
+如果想单机容器部署，可以参考我这篇文章：[【大数据】通过 docker-compose 快速部署 Presto（Trino）保姆级教程](https://mp.weixin.qq.com/s?__biz=MzI3MDM5NjgwNg==&mid=2247487951&idx=1&sn=de71c3ae3b4b0d3a5cd89efef11b5e60&chksm=ead0ed26dda76430f30ff4e95fbac5870b2b3e0f62c5eba456c1244ff1de5d928a800c687db0#rd)
 
 ![输入图片说明](images/1.jpeg)
 
