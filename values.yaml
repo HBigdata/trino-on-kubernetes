@@ -1,0 +1,215 @@
+# Default values for trino.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: registry.cn-hangzhou.aliyuncs.com/bigdata_cloudnative/trino-k8s
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart version.
+  tag: 416
+
+imagePullSecrets:
+  - name: registry-credentials
+
+server:
+  workers: 1
+  node:
+    environment: production
+    dataDir: /opt/apache/trino/data
+    pluginDir: /opt/apache/trino/plugin
+  log:
+    trino:
+      level: INFO
+  config:
+    path: /opt/apache/trino/etc
+    http:
+      port: 8080
+    https:
+      enabled: false
+      port: 8443
+      keystore:
+        path: ""
+    # Trino supports multiple authentication types: PASSWORD, CERTIFICATE, OAUTH2, JWT, KERBEROS
+    # For more info: https://trino.io/docs/current/security/authentication-types.html
+    authenticationType: ""
+    query:
+      maxMemory: "1GB"
+      maxMemoryPerNode: "512MB"
+    memory:
+      heapHeadroomPerNode: "512MB"
+  exchangeManager:
+    name: "filesystem"
+    baseDir: "/tmp/trino-local-file-system-exchange-manager"
+  workerExtraConfig: ""
+  coordinatorExtraConfig: ""
+  autoscaling:
+    enabled: false
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+
+accessControl: {}
+  # type: configmap
+  # refreshPeriod: 60s
+  # # Rules file is mounted to /etc/trino/access-control
+  # configFile: "rules.json"
+  # rules:
+  #   rules.json: |-
+  #     {
+  #       "catalogs": [
+  #         {
+  #           "user": "admin",
+  #           "catalog": "(mysql|system)",
+  #           "allow": "all"
+  #         },
+  #         {
+  #           "group": "finance|human_resources",
+  #           "catalog": "postgres",
+  #           "allow": true
+  #         },
+  #         {
+  #           "catalog": "hive",
+  #           "allow": "all"
+  #         },
+  #         {
+  #           "user": "alice",
+  #           "catalog": "postgresql",
+  #           "allow": "read-only"
+  #         },
+  #         {
+  #           "catalog": "system",
+  #           "allow": "none"
+  #         }
+  #       ],
+  #       "schemas": [
+  #         {
+  #           "user": "admin",
+  #           "schema": ".*",
+  #           "owner": true
+  #         },
+  #         {
+  #           "user": "guest",
+  #           "owner": false
+  #         },
+  #         {
+  #           "catalog": "default",
+  #           "schema": "default",
+  #           "owner": true
+  #         }
+  #       ]
+  #     }
+
+additionalNodeProperties: {}
+
+additionalConfigProperties: {}
+
+additionalLogProperties: {}
+
+additionalExchangeManagerProperties: {}
+
+eventListenerProperties: {}
+
+#additionalCatalogs: {}
+
+additionalCatalogs: 
+  mysql: |-
+    connector.name=mysql
+    connection-url=jdbc:mysql://mysql-primary.mysql:3306
+    connection-user=root
+    connection-password=WyfORdvwVm
+  hive: |-
+    connector.name=hive
+    hive.metastore.uri=thrift://hadoop-hadoop-hive-metastore.hadoop:9083
+    hive.allow-drop-table=true
+    hive.allow-rename-table=true
+    #hive.config.resources=/tmp/core-site.xml,/tmp/hdfs-site.xml
+   
+
+# Array of EnvVar (https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#envvar-v1-core)
+env: []
+
+initContainers: {}
+  # coordinator:
+  #   - name: init-coordinator
+  #     image: busybox:1.28
+  #     imagePullPolicy: IfNotPresent
+  #     command: ['sh', '-c', "until nslookup myservice.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for myservice; sleep 2; done"]
+  # worker:
+  #   - name: init-worker
+  #     image: busybox:1.28
+  #     command: ['sh', '-c', 'echo The worker is running! && sleep 3600']
+
+securityContext:
+  runAsUser: 10000
+  runAsGroup: 10000
+
+service:
+  #type: ClusterIP
+  type: NodePort
+  port: 8080
+  nodePort: 31880
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+auth: {}
+  # Set username and password
+  # https://trino.io/docs/current/security/password-file.html#file-format
+  # passwordAuth: "username:encrypted-password-with-htpasswd"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # Annotations to add to the service account
+  annotations: {}
+
+secretMounts: []
+
+coordinator:
+  jvm:
+    maxHeapSize: "2G"
+    gcMethod:
+      type: "UseG1GC"
+      g1:
+        heapRegionSize: "32M"
+
+  additionalJVMConfig: {}
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+worker:
+  jvm:
+    maxHeapSize: "2G"
+    gcMethod:
+      type: "UseG1GC"
+      g1:
+        heapRegionSize: "32M"
+
+  additionalJVMConfig: {}
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
