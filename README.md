@@ -1,75 +1,117 @@
 
-Trino
-===========
+## 一、概述
+Trino on Kubernetes（Trino在Kubernetes上的部署）是将Trino查询引擎与Kubernetes容器编排平台相结合，以实现在Kubernetes集群上部署、管理和运行Trino的解决方案。
 
-Fast distributed SQL query engine for big data analytics that helps you explore your data universe
+Trino（之前称为Presto SQL）是一个高性能的分布式SQL查询引擎，旨在处理大规模数据集和复杂查询。Kubernetes是一个流行的开源容器编排平台，用于自动化容器的部署、扩展和管理。
+
+将Trino部署在Kubernetes上可以带来一些优势：
+
+- **弹性扩展**：Kubernetes提供了自动化的容器扩展功能，可以根据工作负载的需求自动增加或减少Trino的实例数。这样，可以根据查询负载的变化进行弹性伸缩，提高性能和资源利用率。
+
+- **高可用性**：Kubernetes具有容错和故障恢复的能力。通过在Kubernetes集群中部署多个Trino实例，可以实现高可用性架构，当其中一个实例失败时，其他实例可以接管工作，保证系统的可用性。
+
+- **资源管理**：Kubernetes提供了资源调度和管理的功能，可以控制Trino实例使用的计算资源、存储资源和网络资源。通过适当配置资源限制和请求，可以有效地管理Trino查询的资源消耗，防止资源冲突和争用。
+
+- **简化部署和管理**：Kubernetes提供了声明性的配置和自动化的部署机制，可以简化Trino的部署和管理过程。通过使用Kubernetes的标准工具和API，可以轻松地进行Trino实例的创建、配置和监控。
+
+- **生态系统整合**：Kubernetes具有丰富的生态系统和集成能力，可以与其他工具和平台进行无缝集成。例如，可以与存储系统（如Hadoop HDFS、Amazon S3）和其他数据处理工具（如Apache Spark）集成，实现数据的无缝访问和处理。
+
+需要注意的是，将Trino部署在Kubernetes上需要适当的配置和调优，以确保性能和可靠性。此外，对于大规模和复杂的查询场景，可能需要考虑数据分片、数据划分和数据本地性等方面的优化。
+
+总之，Trino on Kubernetes提供了一种灵活、可扩展和高效的方式来部署和管理Trino查询引擎，使其能够更好地适应大数据环境中的查询需求。
+
+这里只是讲解部署过程，想了解更多的trino的内容，可参考我以下几篇文章：
+
+- [大数据Hadoop之——基于内存型SQL查询引擎Presto（Presto-Trino环境部署）](https://blog.csdn.net/qq_35745940/article/details/123778966)
+- [【大数据】Presto（Trino）SQL 语法进阶](https://blog.csdn.net/qq_35745940/article/details/130736259)
+- [【大数据】Presto（Trino）REST API 与执行计划介绍](https://blog.csdn.net/qq_35745940/article/details/130757127)
+- [【大数据】Presto（Trino）配置参数以及 SQL语法](https://blog.csdn.net/qq_35745940/article/details/130665852)
+
+如果想单机容器部署，可以参考我这篇文章：[【大数据】通过 docker-compose 快速部署 Presto（Trino）保姆级教程](https://blog.csdn.net/qq_35745940/article/details/130611686)
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/d8776596bdb84e479043c1d384c9587f.jpeg)
+
+## 二、开始部署
+
+### 1）安装 git
+```bash
+# 1、安装 git
+yum -y install git 
+```
+### 2）下载trino安装包
+
+```bash
+git clone git@github.com:HBigdata/trino-on-kubernetes.git
+cd trino-on-kubernetes
+```
+### 3）配置数据源
+
+```bash
+cat -n values.yaml
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/f05bd2c650c4416288a8d4cfb6bd24c3.png)
+### 3）配置资源限制 requests 和 limits
+![在这里插入图片描述](https://img-blog.csdnimg.cn/70b962cddc214438bb29d71170ea26e6.png)
+### 4）修复 trino 配置
+![在这里插入图片描述](https://img-blog.csdnimg.cn/f83303cfb47b4407ae8cdaddc2762c38.png)
+JVM 内存配置
+![在这里插入图片描述](https://img-blog.csdnimg.cn/8f9e2bb1199740bd850d74e8e6592cec.png)
+### 5）开始部署
+
+```bash
+# git clone git@github.com:HBigdata/trino-on-kubernetes.git
+# cd trino-on-kubernetes
+
+# 安装
+helm install trino ./ -n trino --create-namespace
+
+# 更新
+helm upgrade trino ./ -n trino
+
+# 卸载
+helm uninstall trino -n trino
+```
+### 6）测试验证
+
+```bash
+coordinator_name=`kubectl get pods -n trino|grep coordinator|awk '{print $1}'`
+
+# 登录
+kubectl exec -it $coordinator_name -n trino -- ${TRINO_HOME}/bin/trino-cli --server http://trino-coordinator:8080 --catalog=hive --schema=default --user=hadoop
+
+# 查看数据源
+show catalogs;
+# 查看mysql库
+show schemas from hive;
+# 查看表
+show tables from hive.default;
+
+create schema hive.test;
+
+# 创建表
+CREATE TABLE hive.test.movies (
+  movie_id bigint,
+  title varchar,
+  rating real, -- real类似与float类型
+  genres varchar,
+  release_year int
+)
+WITH (
+  format = 'ORC',
+  partitioned_by = ARRAY['release_year'] -- 注意这里的分区字段必须是上面顺序的最后一个
+);
+
+#加载数据到Hive表
+INSERT INTO hive.test.movies
+VALUES 
+(1, 'Toy Story', 8.3, 'Animation|Adventure|Comedy', 1995), 
+(2, 'Jumanji', 6.9, 'Action|Adventure|Family', 1995), 
+(3, 'Grumpier Old Men', 6.5, 'Comedy|Romance', 1995);
+
+# 查询数据
+select * from hive.test.movies;
+```
+![在这里插入图片描述](https://img-blog.csdnimg.cn/e5b9bc7edeae4426a326fb169f7a5809.png)
 
 
-## Configuration
-
-The following table lists the configurable parameters of the Trino chart and their default values.
-
-| Parameter                | Description             | Default        |
-| ------------------------ | ----------------------- | -------------- |
-| `image.repository` |  | `"trinodb/trino"` |
-| `image.pullPolicy` |  | `"IfNotPresent"` |
-| `image.tag` |  | `"latest"` |
-| `imagePullSecrets` |  | `[{"name": "registry-credentials"}]` |
-| `server.workers` |  | `2` |
-| `server.node.environment` |  | `"production"` |
-| `server.node.dataDir` |  | `"/data/trino"` |
-| `server.node.pluginDir` |  | `"/usr/lib/trino/plugin"` |
-| `server.log.trino.level` |  | `"INFO"` |
-| `server.config.path` |  | `"/etc/trino"` |
-| `server.config.http.port` |  | `8080` |
-| `server.config.https.enabled` |  | `false` |
-| `server.config.https.port` |  | `8443` |
-| `server.config.https.keystore.path` |  | `""` |
-| `server.config.authenticationType` |  | `""` |
-| `server.config.query.maxMemory` |  | `"4GB"` |
-| `server.config.query.maxMemoryPerNode` |  | `"1GB"` |
-| `server.config.memory.heapHeadroomPerNode` |  | `"1GB"` |
-| `server.exchangeManager.name` |  | `"filesystem"` |
-| `server.exchangeManager.baseDir` |  | `"/tmp/trino-local-file-system-exchange-manager"` |
-| `server.workerExtraConfig` |  | `""` |
-| `server.coordinatorExtraConfig` |  | `""` |
-| `server.autoscaling.enabled` |  | `false` |
-| `server.autoscaling.maxReplicas` |  | `5` |
-| `server.autoscaling.targetCPUUtilizationPercentage` |  | `50` |
-| `accessControl` |  | `{}` |
-| `additionalNodeProperties` |  | `{}` |
-| `additionalConfigProperties` |  | `{}` |
-| `additionalLogProperties` |  | `{}` |
-| `additionalExchangeManagerProperties` |  | `{}` |
-| `eventListenerProperties` |  | `{}` |
-| `additionalCatalogs` |  | `{}` |
-| `env` |  | `[]` |
-| `initContainers` |  | `{}` |
-| `securityContext.runAsUser` |  | `1000` |
-| `securityContext.runAsGroup` |  | `1000` |
-| `service.type` |  | `"ClusterIP"` |
-| `service.port` |  | `8080` |
-| `nodeSelector` |  | `{}` |
-| `tolerations` |  | `[]` |
-| `affinity` |  | `{}` |
-| `auth` |  | `{}` |
-| `serviceAccount.create` |  | `false` |
-| `serviceAccount.name` |  | `""` |
-| `serviceAccount.annotations` |  | `{}` |
-| `secretMounts` |  | `[]` |
-| `coordinator.jvm.maxHeapSize` |  | `"1G"` |
-| `coordinator.jvm.gcMethod.type` |  | `"UseG1GC"` |
-| `coordinator.jvm.gcMethod.g1.heapRegionSize` |  | `"32M"` |
-| `coordinator.additionalJVMConfig` |  | `{}` |
-| `coordinator.resources` |  | `{}` |
-| `worker.jvm.maxHeapSize` |  | `"1G"` |
-| `worker.jvm.gcMethod.type` |  | `"UseG1GC"` |
-| `worker.jvm.gcMethod.g1.heapRegionSize` |  | `"32M"` |
-| `worker.additionalJVMConfig` |  | `{}` |
-| `worker.resources` |  | `{}` |
-
-
-
----
-_Documentation generated by [Frigate](https://frigate.readthedocs.io)._
-
+到这里完成 `trino on k8s` 部署和可用性演示就完成了，有任何疑问请关注我公众号：`大数据与云原生技术分享`，加群交流或私信沟通，如本篇文章对您有所帮助，麻烦帮忙一键三连（点赞、转发、收藏）~
